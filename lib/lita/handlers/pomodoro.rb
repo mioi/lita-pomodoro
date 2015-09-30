@@ -26,12 +26,12 @@ module Lita
           reply_message = "Starting pomodoro session for #{min} minutes"
         end
         stop_time ||= now + min*60
-        response.reply("@#{user.mention_name}: #{reply_message} (until #{stop_time.strftime("%l:%M%P")}).")
+        response.reply("#{linked_mention_name(user)}: #{reply_message} (until #{stop_time.strftime("%l:%M%P")}).")
         # set stop time by modifying metadata on user info
         Lita::User.create(user.id, metadata = {:pomodoro_stop => stop_time})
         # notify them when their pomodoro is up
         after(min*60) { |timer|
-          response.reply_privately("#{user.name}, your pomodoro session has ended!")
+          response.reply("#{linked_mention_name(user)}: your pomodoro session has ended!")
           log.debug("#{user.mention_name}'s pomodoro session ended")
         }
         log.debug("#{user.mention_name} started a pomodoro session")
@@ -47,7 +47,7 @@ module Lita
         else
           reply_message = "You weren't pomodoroing."
         end
-        response.reply_privately("@#{user.mention_name}: #{reply_message}")
+        response.reply("#{linked_mention_name(user)}: #{reply_message}")
         log.debug("#{user.mention_name} ended a pomodoro session")
       end
 
@@ -64,7 +64,16 @@ module Lita
         match = response.matches.join('').strip
         # check if match is pomodoroing
         if found_user = Lita::User.find_by_pomodoro.find {|u| u.mention_name == match }
-          response.reply("@#{response.user.mention_name} #{found_user.mention_name} is currently pomodoroing, until #{Time.parse(found_user.metadata["pomodoro_stop"]).strftime("%l:%M%P")}.")
+          response.reply("#{linked_mention_name(response.user)}: #{found_user.mention_name} is currently pomodoroing, until #{Time.parse(found_user.metadata["pomodoro_stop"]).strftime("%l:%M%P")}.")
+        end
+      end
+
+      def linked_mention_name(user)
+        case robot.config.robot.adapter
+        when :slack
+          "<@#{user.id}|#{user.mention_name}>"
+        else
+          user.mention_name || user.name
         end
       end
 
