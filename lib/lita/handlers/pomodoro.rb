@@ -4,6 +4,7 @@ module Lita
   module Handlers
     class Pomodoro < Handler
       route(/^(\d+)$/, :start, command: true, help: {"25" => "Start a pomodoro session of 25 minutes in length."})
+      route(/^start$/, :start, command:true, help: {"start" => "Start a pomodoro session."})
       route(/^until\s+(.+)$/, :start, command:true, help: {"until TIME" => "Start a pomodoro session lasting until TIME (ex: until 5:00pm)."})
       route(/^stop$/, :stop, command: true, help: {"stop" => "Stop a pomodoro session."})
       route(/^list$/, :list, command: true, help: {"list" => "List everyone who's pomodoroing right now."})
@@ -13,7 +14,9 @@ module Lita
         user = response.user
         now = Time.now
         match = response.matches.join('').strip
-        if match.match(/^\d+$/)
+        if match == "start"
+          min = 25
+        elsif match.match(/^\d+$/)
           min = match.to_i
         else
           stop_time = Time.parse(match)
@@ -29,8 +32,11 @@ module Lita
         response.reply("#{linked_mention_name(user)}: #{reply_message} (until #{stop_time.strftime("%l:%M%P")}).")
         # set stop time by modifying metadata on user info
         Lita::User.create(user.id, metadata = {:pomodoro_stop => stop_time})
+        redis.rpush("active_users", user.id)
         # notify them when their pomodoro is up
         after(min*60) { |timer|
+          break if !redis.lrange("active_users", 0, -1).include?(user.id)
+          redis.lrem("active_users", 0, user.id)
           response.reply("#{linked_mention_name(user)}: your pomodoro session has ended!")
           log.debug("#{user.mention_name}'s pomodoro session ended")
         }
@@ -42,6 +48,7 @@ module Lita
         now = Time.now
         if user.metadata["pomodoro_stop"] && Time.parse(user.metadata["pomodoro_stop"]) > now
           reply_message = "Stopping your pomodoro session."
+          redis.lrem("active_users", 0, user.id)
           # set stop time by modifying metadata on user info
           Lita::User.create(user.id, metadata = {:pomodoro_stop => now})
         else
