@@ -18,7 +18,8 @@ n/a
 
 with this handler, Lita will respond to these commands (they need to be directed at them via @<name> or pm):
 
-    25 - Start a pomodoro session of 25 minutes in length.
+    start - Start a pomodoro session of 25 minutes in length.
+    30 - Start a pomodoro session of 30 minutes in length.
     until TIME - Start a pomodoro session lasting until TIME (ex: until 5:00pm).
     stop - Stop a pomodoro session.
     list - List everyone who's pomodoroing right now.

@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "lita-pomodoro"
-  spec.version       = "0.1.0"
+  spec.version       = "0.1.1"
   spec.authors       = ["Mioi Hanaoka"]
   spec.email         = ["mioi@mioi.net"]
   spec.description   = "Get lita to keep track of Pomodoros, the popular time management system."

@@ -34,10 +34,10 @@ module Lita
         Lita::User.create(user.id, metadata = {:pomodoro_stop => stop_time})
         redis.rpush("active_users", user.id)
         # notify them when their pomodoro is up
-        after(min*60) { |timer|
+        Lita::Timer.after(min*60) { |timer|
           break if !redis.lrange("active_users", 0, -1).include?(user.id)
           redis.lrem("active_users", 0, user.id)
-          response.reply("#{linked_mention_name(user)}: your pomodoro session has ended!")
+          response.reply("#{linked_mention_name(user)}: Your pomodoro session has ended!")
           log.debug("#{user.mention_name}'s pomodoro session ended")
         }
         log.debug("#{user.mention_name} started a pomodoro session")
@@ -97,6 +97,14 @@ module Lita
 
       def find_by_pomodoro
         all_users.select {|u| u.metadata["pomodoro_stop"] && Time.parse(u.metadata["pomodoro_stop"]) > Time.now }.uniq {|u| u.id }
+      end
+    end
+  end
+
+  class Timer
+    class << self
+      def after(interval, &block)
+        Thread.new { new(interval: interval, &block).start }
       end
     end
   end
