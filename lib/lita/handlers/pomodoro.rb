@@ -91,7 +91,7 @@ module Lita
   class User
     class << self
       def all_users
-        keys = redis.keys("name:*")
+        keys = redis.keys("mention_name:*")
         keys.map {|k| find_by_id(redis.get(k)) }
       end
 
